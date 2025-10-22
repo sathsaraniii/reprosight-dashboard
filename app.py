@@ -36,7 +36,7 @@ def show_landing_page():
         transition: 0.3s;
         
         /* --- NEW LINES FOR UNIFORM SIZE --- */
-        min-height: 320px; /* Sets a minimum height for all cards */
+        min-height: 350px; /* Sets a minimum height for all cards */
         display: flex; /* Enables flexbox layout */
         flex-direction: column; /* Stacks content vertically */
     }
@@ -72,7 +72,7 @@ def show_landing_page():
 
     st.markdown("""
     <div class="intro-card">
-        <h4>🎯 What is ReproSight?</h4>
+        <h4>What is ReproSight?</h4>
         <p> ReproSight is a clinical analytics platform designed to reveal the hidden relationships
         between environmental toxin exposure and human reproductive health.
         This dashboard brings data scientists and clinicians together to explore patterns,
