@@ -19,99 +19,6 @@ st.set_page_config(
 
 df = pd.read_csv('final_cleaned.csv')
 
-# def show_landing_page():
-#     """Landing page: brief intro + one main info box with four dataset cards."""
-
-#     # --- CSS ---
-#     st.markdown("""
-#     <style>
-#     .main-box {
-#         background-color:#f9fafc;
-#         border-radius:12px;
-#         padding:30px;
-#         box-shadow:0 4px 10px rgba(0,0,0,0.1);
-#         margin-top:20px;
-#     }
-#     .dataset-card {
-#         background-color:#ffffff;
-#         border-radius:10px;
-#         padding:15px;
-#         text-align:center;
-#         box-shadow:0 2px 6px rgba(0,0,0,0.1);
-#         transition:0.3s;
-#     }
-#     .dataset-card:hover {
-#         transform:scale(1.03);
-#         box-shadow:0 4px 10px rgba(0,0,0,0.15);
-#     }
-#     .dataset-card h4 {
-#         margin-bottom:6px;
-#         color:#0d3b66;
-#     }
-#     </style>
-#     """, unsafe_allow_html=True)
-# #     # --- Page Title ---
-# #     st.write("# Welcome to ReproSight Analytics Hub!")
-# #     # st.title("From Data to Discovery")
-# #     st.markdown("---")
-
-# #     # --- Card Layout ---
-# #     col1, col2 = st.columns(2)
-
-#     # --- Title and intro ---
-#     st.title("Welcome to ReproSight Analytics Hub!")
-#     st.markdown("""
-#     **ReproSight** is a clinical analytics platform designed to reveal the hidden relationships
-#     between environmental toxin exposure and human reproductive health.
-#     This dashboard brings data scientists and clinicians together to explore patterns,
-#     test hypotheses, and translate data into actionable insights.
-#     """)
-#     # st.markdown("""
-#     #     It integrates
-#     #     multiple datasets from the NHANES program and related biomedical sources.
-#     #     Our goal is to model how heavy-metal exposure affects key domains such as
-#     #     Hormone Balance, Infertility,
-#     #     Menstrual Health, and Menopause.
-#     #              """)
-
-
-
-#     st.write("## Datasets powering ReproSight")
-
-#     # --- Four horizontal dataset cards ---
-#     col1, col2, col3, col4 = st.columns(4)
-#     with col1:
-#         st.markdown("""
-#         <div class="dataset-card">
-#             <h4>Reproductive Hormone Dataset</h4>
-#             <p>Contains serum levels of testosterone, estradiol, and SHBG along with detection limit flags for hormonal assessment.</p>
-#         </div>
-#         """, unsafe_allow_html=True)
-#     with col2:
-#         st.markdown("""
-#         <div class="dataset-card">
-#             <h4>Environmental Metal Exposure Dataset</h4>
-#             <p>Includes blood concentrations of heavy metals such as lead, cadmium, mercury, selenium, and manganese.</p>
-#         </div>
-#         """, unsafe_allow_html=True)
-#     with col3:
-#         st.markdown("""
-#         <div class="dataset-card">
-#             <h4>Reproductive Health Questionnaire</h4>
-#             <p>Captures reproductive history including menstrual patterns, pregnancy attempts, menopause, hysterectomy, and hormone therapy.</p>
-#         </div>
-#         """, unsafe_allow_html=True)
-#     with col4:
-#         st.markdown("""
-#         <div class="dataset-card">
-#             <h4>Demographic and Socioeconomic Dataset</h4>
-#             <p>Provides demographic variables like age, gender, ethnicity, education, and income for contextual modeling.</p>
-#         </div>
-#         """, unsafe_allow_html=True)
-
-#     st.markdown("---")
-
-
 
 # --- A. Function to display the Landing Page (with new card design) ---
 def show_landing_page():
@@ -143,7 +50,7 @@ def show_landing_page():
     }
 
     .intro-card {
-           background-color: #f0f2f6;
+        background-color: #f0f2f6;
         border-radius: 10px;
         padding: 50px;
         margin: 10px 0;
@@ -385,6 +292,46 @@ def show_stakeholder_dashboard():
                 """
             )
 
+            st.markdown("---")
+            
+            # --- Insight 2: Infertility Rate by Age Group (NEW) ---
+            st.subheader("Infertility Rate by Age Group")
+            df_fertility = df.copy()
+            df_fertility['infertility_status'] = df_fertility['infertility_1yr'].map({1: 'Yes', 2: 'No'}).fillna('Unknown')
+            # 1. Define age bins and labels for reproductive years
+            bins = [18, 25, 30, 35, 40, 45, 50]
+            labels = ['18-24', '25-29', '30-34', '35-39', '40-44', '45-50']
+            
+            # 2. Create age group column (filtering out ages > 50)
+            df_age_analysis = df_fertility[(df_fertility['age_years'] >= 18) & (df_fertility['age_years'] < 50)].copy()
+            df_age_analysis['age_group'] = pd.cut(df_age_analysis['age_years'], bins=bins, labels=labels, right=False)
+            
+            # 3. Create a boolean column for infertility
+            df_age_analysis['is_infertile'] = (df_age_analysis['infertility_status'] == 'Yes')
+            
+            # 4. Calculate the mean infertility rate for each age group
+            infertility_rate_by_age = df_age_analysis.groupby('age_group')['is_infertile'].mean().reset_index()
+            infertility_rate_by_age['Infertility Rate (%)'] = infertility_rate_by_age['is_infertile'] * 100
+
+            # 5. Create the bar chart
+            if not infertility_rate_by_age.empty:
+                fig_age = px.bar(
+                    infertility_rate_by_age,
+                    x='age_group',
+                    y='Infertility Rate (%)',
+                    title='Infertility Rate by Age Group',
+                    labels={'age_group': 'Age Group', 'Infertility Rate (%)': 'Infertility Rate (%)'}
+                )
+                st.plotly_chart(fig_age, use_container_width=True)
+                st.info(
+                    """
+                    **How to Interpret This Chart:**
+                    This chart shows the percentage of women in each age group who reported experiencing infertility for at least one year.
+                    """
+                )
+            else:
+                st.warning("Not enough data in the 18-50 age range to display infertility rates by age group.")
+
     with tab3:
         st.header("Analysing Menstrual Cycle Patterns")
         # st.markdown("This section analyzes factors related to period regularity.")
@@ -397,17 +344,6 @@ def show_stakeholder_dashboard():
             options=['lead_µg/dL', 'cadmium_µg/L', 'mercury_µg/L', 'selenium_µg/L', 'manganese_µg/L'],
             key="menstrual_metal_select" # Use a unique key
         )
-
-        # if metal_menstrual:
-        #     fig = px.box(
-        #         df, 
-        #         x='regular_periods', 
-        #         y=metal_menstrual, 
-        #         color='regular_periods',
-        #         title=f"Distribution of {metal_menstrual} for Regular and Irregular Cycles",
-        #         labels={"regular_periods": "Regular Menstrual Periods"}
-        #     )
-        #     st.plotly_chart(fig, use_container_width=True)  
 
         if metal_menstrual:
             fig = go.Figure()
@@ -435,6 +371,9 @@ def show_stakeholder_dashboard():
                 showlegend=False # Hide legend as the x-axis already provides the labels
             )
             st.plotly_chart(fig, use_container_width=True)    
+
+            
+
 
     with tab4:
         st.header("Menopause Trends")
