@@ -480,11 +480,15 @@ def show_scientist_dashboard():
         numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
         categorical_cols = df.select_dtypes(include=['category', 'object']).columns.tolist()
 
+        metal_columns = ['lead_µg/dL', 'cadmium_µg/L', 'mercury_µg/L', 'selenium_µg/L', 'manganese_µg/L', 'lead_µmol/L', 'cadmium_nmol/L', 'mercury_nmol/L', 'selenium_µmol/L', 'manganese_nmol/L', 'Blood metal weights']
+        non_metal_columns = [col for col in df.columns if col not in metal_columns]
+
+
         col1, col2, col3 = st.columns(3)
         with col1:
             x_var = st.selectbox("Select X-axis variable", options=df.columns, key="bivariate_x")
         with col2:
-            y_var = st.selectbox("Select Y-axis variable", options=df.columns, key="bivariate_y")
+            y_var = st.selectbox("Select Y-axis variable", options=non_metal_columns, key="bivariate_y")
         with col3:
             color_var = st.selectbox("Select color variable (optional)", options=[None] + categorical_cols, key="bivariate_color")
 
@@ -494,7 +498,6 @@ def show_scientist_dashboard():
                 fig = px.scatter(df, x=x_var, y=y_var, color=color_var, title=f"{x_var} vs. {y_var}")
                 st.plotly_chart(fig, use_container_width=True)
 
-                # --- FIX IS HERE ---
                 # Create a temporary dataframe with only the two columns and drop rows where EITHER value is missing
                 temp_df = df[[x_var, y_var]].dropna()
                 
