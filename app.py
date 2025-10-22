@@ -36,7 +36,7 @@ def show_landing_page():
         transition: 0.3s;
         
         /* --- NEW LINES FOR UNIFORM SIZE --- */
-        min-height: 375px; /* Sets a minimum height for all cards */
+        min-height: 360px; /* Sets a minimum height for all cards */
         display: flex; /* Enables flexbox layout */
         flex-direction: column; /* Stacks content vertically */
     }
