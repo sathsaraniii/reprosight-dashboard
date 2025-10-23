@@ -36,7 +36,7 @@ def show_landing_page():
         transition: 0.3s;
         
         /* --- NEW LINES FOR UNIFORM SIZE --- */
-        min-height: 360px; /* Sets a minimum height for all cards */
+        min-height: 350px; /* Sets a minimum height for all cards */
         display: flex; /* Enables flexbox layout */
         flex-direction: column; /* Stacks content vertically */
     }
@@ -224,7 +224,7 @@ def show_stakeholder_dashboard():
 
             st.markdown("This heatmap shows the linear relationship between various heavy metals and key reproductive hormones. Bright red indicates a strong negative correlation, while bright blue indicates a strong positive correlation.")
             # --- The Drill-Down Scatter Plot ---
-        st.subheader("Drill-Down: Metal vs. Hormone")
+        st.subheader("Metal vs. Hormone Impact Analysis")
         col1, col2 = st.columns(2)
         with col1:
             metal_to_plot = st.selectbox("Select a metal to plot:", options=valid_metal_cols, key="metal_scatter_select")
@@ -344,33 +344,78 @@ def show_stakeholder_dashboard():
             options=['lead_µg/dL', 'cadmium_µg/L', 'mercury_µg/L', 'selenium_µg/L', 'manganese_µg/L'],
             key="menstrual_metal_select" # Use a unique key
         )
-
         if metal_menstrual:
-            fig = go.Figure()
-
-            # For each category ('Yes', 'No'), we'll add a violin and a box plot
+            fig_rain = go.Figure()
+            # Loop for Raincloud plot
             for status in df['regular_periods'].unique():
-                # Filter data for the specific category
                 df_filtered = df[df['regular_periods'] == status]
-                
-                # Add the violin plot (the "cloud")
-                fig.add_trace(go.Violin(
-                    x=df_filtered['regular_periods'],
-                    y=df_filtered[metal_menstrual],
-                    name=status,
-                    box_visible=True, # Add a box plot inside the violin
-                    meanline_visible=True, # Show the mean line
-                    points='all', # Show individual data points (the "rain")
-                    jitter=0.3,
-                    pointpos=-1.8
+                fig_rain.add_trace(go.Violin(
+                    x=df_filtered['regular_periods'], y=df_filtered[metal_menstrual], name=status,
+                    box_visible=True, meanline_visible=True, points='all', jitter=0.3, pointpos=-1.8
                 ))
-            
-            fig.update_layout(
-                title_text=f"Raincloud Plot: Distribution of {metal_menstrual} for Regular vs. Irregular Cycles",
-                xaxis_title="Regular Menstrual Periods",
-                showlegend=False # Hide legend as the x-axis already provides the labels
+            fig_rain.update_layout(title_text=f"Raincloud Plot: {metal_menstrual} for Regular vs. Irregular Cycles", xaxis_title="Regular Menstrual Periods", showlegend=False)
+            st.plotly_chart(fig_rain, use_container_width=True)
+
+        st.markdown("---")
+
+
+        # --- Insight 2: Age of First Period vs. Metal Exposure (NEW BOX PLOT) ---
+        st.subheader("How heavy Metal Exposure affects the Age of First Period")
+        
+        # Filter for realistic first period ages
+        df_menarche = df[df['first_period_age'].between(8, 20)].copy()
+        
+        # --- FIX ---
+        # Convert the age column to a string so Plotly treats it as a category, not a number
+        df_menarche['first_period_age'] = df_menarche['first_period_age'].astype(str)
+
+        metal_menarche = st.selectbox(
+            "Select a heavy metal to investigate:",
+            options=['lead_µg/dL', 'cadmium_µg/L', 'mercury_µg/L', 'selenium_µg/L', 'manganese_µg/L'],
+            key="menarche_metal_select"
+        )
+        if metal_menarche:
+            fig_menarche_box = px.box(
+                df_menarche,
+                y='first_period_age',  # X-axis is now the discrete age
+                x=metal_menarche,      # Y-axis is the continuous metal level
+                color='first_period_age', # Color by age for clarity
+                title=f"Distribution of {metal_menarche} by Age of First Period",
+                labels={
+                    "first_period_age": "Age of First Period",
+                    metal_menarche: f"Blood {metal_menarche.split('_')[0].capitalize()} Concentration"
+                }
             )
-            st.plotly_chart(fig, use_container_width=True)    
+            # Sort the x-axis to be in numerical order (e.g., 11, 12, 13)
+            fig_menarche_box.update_xaxes(categoryorder='category ascending')
+            st.plotly_chart(fig_menarche_box, use_container_width=True)
+            st.info("This chart helps explore if metal exposure levels differ by the age of first menstruation. You can look for a trend (e.g., rising or falling) in the boxes as age increases.")
+        # if metal_menstrual:
+        #     fig = go.Figure()
+
+        #     # For each category ('Yes', 'No'), we'll add a violin and a box plot
+        #     for status in df['regular_periods'].unique():
+        #         # Filter data for the specific category
+        #         df_filtered = df[df['regular_periods'] == status]
+                
+        #         # Add the violin plot (the "cloud")
+        #         fig.add_trace(go.Violin(
+        #             x=df_filtered['regular_periods'],
+        #             y=df_filtered[metal_menstrual],
+        #             name=status,
+        #             box_visible=True, # Add a box plot inside the violin
+        #             meanline_visible=True, # Show the mean line
+        #             points='all', # Show individual data points (the "rain")
+        #             jitter=0.3,
+        #             pointpos=-1.8
+        #         ))
+            
+        #     fig.update_layout(
+        #         title_text=f"Raincloud Plot: Distribution of {metal_menstrual} for Regular vs. Irregular Cycles",
+        #         xaxis_title="Regular Menstrual Periods",
+        #         showlegend=False # Hide legend as the x-axis already provides the labels
+        #     )
+        #     st.plotly_chart(fig, use_container_width=True)    
 
             
 
@@ -526,7 +571,6 @@ def show_scientist_dashboard():
 
         numeric_df = df.select_dtypes(include=np.number)
         
-        # --- FIX IS HERE ---
         # 1. Calculate the correlation matrix and immediately round it
         corr_matrix = numeric_df.corr().round(2)
 
